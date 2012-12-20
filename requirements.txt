@@ -1,0 +1,5 @@
+fabric==1.4.3
+yolk==0.4.1
+cuisine==0.4.0
+requests==0.9.3
+python-cloudservers==1.2

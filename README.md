@@ -27,7 +27,7 @@ To use run the `fab` command with subsequent commands.
 Create new server called webserver.mydomain.com and print the generated root
 password to the console.
 
-	fab DC_production system_bootstrap:webserver.mydomain.com
+	fab dc_production system_bootstrap:'webserver.mydomain.com'
 
 You can also add hosts to the *host.py* file to run commands from *rebar.py*
 

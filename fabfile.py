@@ -1,10 +1,10 @@
-from rebar.rebar import *
+from rebar.rebar import system_bootstrap, system_setup
 from rebar.datacenters import *
-
 from fabric.colors import green
 
 def help():
-    print('#' *60)
+    '''
+    Print help
+    '''
     print(green("Server Setup Functions"))
-    print('#' *60)
     help_server()

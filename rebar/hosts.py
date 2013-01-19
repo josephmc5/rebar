@@ -1,25 +1,19 @@
-from fabric.api import sudo, env, run, local
-from fabric.contrib.files import contains,append,comment
-from fabric.context_managers import cd
-from cuisine import *
+'''
+Hosts are specified here so we can manage them.
+'''
+from fabric.api import sudo, env, run
+from fabric.contrib.files import comment
 
-from rebar import *
-
-def help_server():
-    print(green("Available functions:"))
-    print("     add_user(username,password)")
-    print("     cmd(command to run)")
-    print("     add_user(username, password)") 
-    print("     add_ssh_key(username)") 
-    print("     passwd(username, password)") 
-    print("     install_hg()")
-
+from misc import sudo_nopasswd
 
 def default():
+    '''
+    example host
+    '''
     env.name = 'prod'
-    env.user = 
+    env.user = 'root'
     env.hosts = ['myhost'] 
 
     sudo_nopasswd('joe')
-    comment('/etc/ssh/sshd_config','^PasswordAuthentication', use_sudo=True)
+    comment('/etc/ssh/sshd_config', '^PasswordAuthentication', use_sudo=True)
     sudo('service ssh reload')

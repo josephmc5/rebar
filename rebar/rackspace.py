@@ -1,35 +1,46 @@
 #Derived from https://raw.github.com/nicholaskuechler/autoscale-rackspacecloud-fabric-celery/master/fabfile.py
-import os
-import sys
-import datetime
-import base64
 import cloudservers
-#import cloudlb
 import urllib2
 import time
-import uuid
-import settings
-import datacenters
 
+from config import CLOUDSERVERS_IMAGE_TEMPLATE
+from misc import print_root_password
 from time import sleep
 import string
 import random
 from fabric.api import env
+from fabric.colors import red, green, blue
 
 def password_gen(size=10, chars=string.ascii_letters + string.digits):
+    '''
+    Generate a random password
+    '''
     return ''.join(random.choice(chars) for x in range(size))
 
 def get_cs():
-    return cloudservers.CloudServers(env.CLOUDSERVERS_USERNAME, env.CLOUDSERVERS_API_KEY)
+    '''
+    Create a cs object connected to the cloud account specified
+    '''
+    return cloudservers.CloudServers(env.CLOUDSERVERS_USERNAME,\
+             env.CLOUDSERVERS_API_KEY)
 
 def _get_server_image(cs, image_name):
+    '''
+    Get a server image based on the name given
+    '''
     i = cs.images.find(name=image_name)
     return i
 
 def _get_flavor(cs, ram_size):
+    '''
+    Get a cloud server size based on ram
+    '''
     return cs.flavors.find(ram=ram_size)
 
 def _get_file_contents(file_name):
+    '''
+    Open local file and return contents
+    '''
     contents = open(file_name, 'r').read()
     return contents
 
@@ -37,7 +48,6 @@ def _reboot_server(cs, s):
     """ 
     reboot a cloud server 
     """
-    
     s.reboot()
     sleep(90)
     return True
@@ -66,10 +76,24 @@ def create_server(cs, name, image_name, ram_size):
 
     return server
 
+def server_exists(cs, name):
+    '''
+    Check if a cloud server exists already
+    '''
+    for server in cs.servers.list():
+        if server.name == name:
+            return True
+
 def change_password(s, password):
+    '''
+    Change the password of a cloud server
+    '''
     s.update(password=password)
 
 def wait_for_server(cs, s, with_url_ping=False):
+    '''
+    Wait for a server to boot. Set with_url_ping to True to check for index.html.
+    '''
     while s.status != 'ACTIVE':
         sleep(30)
         s = cs.servers.get(s.id)
@@ -104,3 +128,37 @@ def wait_for_server(cs, s, with_url_ping=False):
             tries += 1
             if tries > 20: # 10 minutes
                 raise Exception('URL ping timed out')
+
+def boot_server(name, template=CLOUDSERVERS_IMAGE_TEMPLATE, size=256):
+    '''
+    Boot rackspace server based on params
+    '''
+    cs = get_cs()
+    if server_exists(cs, name):
+        raise Exception("Server %s already exists" % name)
+    else:
+        #force size to be an int
+        size = int(size) 
+        s = create_server(cs, name, template, size)
+
+        wait_for_server(cs, s, with_url_ping=False)
+
+        print(green('%s: Server IP is %s (private: %s)' %\
+                     (s.id, s.public_ip, s.private_ip)))
+
+        # small delay to allow the server to fully boot up
+        sleep(60)
+
+        env.host_string = s.private_ip
+        env.private_ip = s.private_ip
+        env.public_ip = s.public_ip
+
+        env.user = 'root'
+        env.password = password_gen()
+        env.root_password = env.password
+
+        change_password(s, env.password)
+        print(green("Waiting a bit for the password to change..."))
+        print_root_password()
+        
+        sleep(40)

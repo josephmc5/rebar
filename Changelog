@@ -1,0 +1,8 @@
+v0.2
+-------
+Major reworking
+Ability to boot whole datacenter based on dictionary in datacenters.py
+
+v0.1
+-------
+Initial
